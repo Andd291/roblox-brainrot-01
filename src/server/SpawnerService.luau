@@ -148,11 +148,19 @@ function SpawnerService.tryBuyBrainrot(player, brainrotId)
 		plotIndex = nil,
 		model = model,
 	}
-	BaseService.placeBrainrotOnPlot(player, record)
+	local placedIndex = BaseService.placeBrainrotOnPlot(player, record)
+	if not placedIndex then
+		-- The last plot filled between the check and the placement: refund
+		-- the buyer and put the brainrot back on the belt instead of losing it.
+		StateService.addMoney(player, brainrot.cost)
+		SpawnerService.returnBrainrotToBelt(record)
+		StateService.sendFeedMessage(player, "Your base filled up just now — money refunded!")
+		return
+	end
 	StateService.pushStateToPlayer(player)
 	StateService.sendFeedMessage(player, "You bought " .. displayName .. " (" .. Util.formatRate(brainrot.rate) .. ")!")
 	if remotes then
-		local plotPosition = BaseService.getBase(player).plots[plotIndex]
+		local plotPosition = BaseService.getBase(player).plots[placedIndex]
 		remotes.PlayEffect:FireAllClients("BuySparkle", plotPosition)
 	end
 end
